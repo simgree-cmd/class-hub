@@ -885,11 +885,15 @@ function createGroup(){
 // ═══════════════════════════════════════════
 //  SEND MESSAGE
 // ═══════════════════════════════════════════
+function isChatBlocked(){
+  const now=new Date(); const mins=now.getHours()*60+now.getMinutes();
+  return mins>=9*60 && mins<14*60;
+}
 function sendMessage(){
   const inp=document.getElementById('msg-input'); const text=inp.value.trim(); if(!text) return;
+  if(isChatBlocked()){ showToast('⏰ Chat is locked 9AM–2PM during school hours.'); inp.value=''; inp.style.height='auto'; return; }
   if(hasBadWord(text)){ showToast('⚠️ Blocked — inappropriate language.'); inp.value=''; inp.style.height='auto'; return; }
   inp.value=''; inp.style.height='auto';
-  // Push to Firebase — listener will auto-update UI
   ref.messages(activeChannel).push({
     user: me.name, email: me.email, avatar: me.avatar, text, ts: Date.now()
   });
@@ -1145,6 +1149,24 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(me.name&&me.email){
     updatePill(); finishLogin();
   }
+  // Check time lock every minute and update input bar
+  function updateTimeLock(){
+    const bar=document.getElementById('chat-input-bar');
+    const inp=document.getElementById('msg-input');
+    const btn=document.getElementById('send-btn');
+    if(!bar) return;
+    if(isChatBlocked()){
+      inp.placeholder='⏰ Chat locked 9AM–2PM';
+      inp.disabled=true; btn.disabled=true;
+      bar.style.opacity='0.45'; bar.style.pointerEvents='none';
+    } else {
+      inp.placeholder='Say something…';
+      inp.disabled=false; btn.disabled=false;
+      bar.style.opacity='1'; bar.style.pointerEvents='auto';
+    }
+  }
+  updateTimeLock();
+  setInterval(updateTimeLock, 30000);
 });
 </script>
 </body>
